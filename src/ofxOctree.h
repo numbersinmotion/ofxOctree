@@ -12,6 +12,7 @@ class ofxOctree {
         void addItem(shared_ptr<N> _item);
         vector<shared_ptr<N>> queryBox(const glm::vec3& _bbMin, const glm::vec3& _bbMax);
         vector<shared_ptr<N>> queryRay(const glm::vec3& _origin, const glm::vec3& _direction);
+        vector<shared_ptr<N>> queryPlane(const glm::vec3& _normal, const float& _distance);
         vector<shared_ptr<N>> getMembers();
         void clear();
     private:
@@ -48,6 +49,13 @@ template<class N>
 vector<shared_ptr<N>> ofxOctree<N>::queryRay(const glm::vec3& _origin, const glm::vec3& _direction) {
     unordered_set<shared_ptr<N>> result;
     top->queryRay(_origin, _direction, result);
+    return vector<shared_ptr<N>>(result.begin(), result.end());
+}
+
+template<class N>
+vector<shared_ptr<N>> ofxOctree<N>::queryPlane(const glm::vec3& _normal, const float& _distance) {
+    unordered_set<shared_ptr<N>> result;
+    top->queryPlane(_normal, _distance, result);
     return vector<shared_ptr<N>>(result.begin(), result.end());
 }
 

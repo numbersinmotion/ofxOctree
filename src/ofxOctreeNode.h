@@ -13,8 +13,10 @@ class ofxOctreeNode {
         void getChildren(shared_ptr<N> _item, vector<ofxOctreeNode*>& _vector);
         void queryBox(const glm::vec3& _bbMin, const glm::vec3& _bbMax, unordered_set<shared_ptr<N>>& _result);
         void queryRay(const glm::vec3& _origin, const glm::vec3& _direction, unordered_set<shared_ptr<N>>& _result);
+        void queryPlane(const glm::vec3& _normal, const float& _distance, unordered_set<shared_ptr<N>>& _result);
         bool nodeIntersectBox(const glm::vec3& _bbMin, const glm::vec3& _bbMax);
         bool nodeIntersectRay(const glm::vec3& _origin, const glm::vec3& _direction);
+        bool nodeIntersectPlane(const glm::vec3& _normal, const float& _distance);
         glm::vec3 bbMin, bbMax;
         vector<shared_ptr<N>> items;
         array<ofxOctreeNode*, 8>* children;
@@ -103,6 +105,17 @@ void ofxOctreeNode<N>::queryRay(const glm::vec3& _origin, const glm::vec3& _dire
 }
 
 template<class N>
+void ofxOctreeNode<N>::queryPlane(const glm::vec3& _normal, const float& _distance, unordered_set<shared_ptr<N>>& _result) {
+    if (children == nullptr) {
+        for (shared_ptr<N> node : items) _result.insert(node);
+    } else {
+        for (ofxOctreeNode* child : *children) {
+            if (child->nodeIntersectPlane(_normal, _distance)) child->queryPlane(_normal, _distance, _result);
+        }
+    }
+}
+
+template<class N>
 bool ofxOctreeNode<N>::nodeIntersectBox(const glm::vec3& _bbMin, const glm::vec3& _bbMax) {
     bool xCheck = (_bbMin.x < bbMax.x) && (_bbMax.x > bbMin.x);
     bool yCheck = (_bbMin.y < bbMax.y) && (_bbMax.y > bbMin.y);
@@ -120,4 +133,13 @@ bool ofxOctreeNode<N>::nodeIntersectRay(const glm::vec3& _origin, const glm::vec
     float t1 = MIN(MIN(fMax.x, fMax.y), fMax.z);
     if ((t0 < 1e-3 && t1 > 1e-3) || (t0 >= 1e-3 && t0 < t1)) return true;
     else return false;
+}
+
+template<class N>
+bool ofxOctreeNode<N>::nodeIntersectPlane(const glm::vec3& _normal, const float& _distance) {
+    glm::vec3 center = 0.5 * (bbMax + bbMin);
+    glm::vec3 extent = bbMax - center;
+    float r = extent.x * abs(_normal.x) + extent.y * abs(_normal.y) + extent.z * abs(_normal.z);
+    float s = glm::dot(_normal, center) - _distance;
+    return abs(s) <= r;
 }
